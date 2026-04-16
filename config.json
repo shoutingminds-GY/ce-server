@@ -1,6 +1,6 @@
 {
-  "api_key": "odE9CAGAf6q18608BDcmQKP9YSxsEm",
-  "api_secret": "mscVm86wwdylRFJ9V3iwzUd7GnQRZLe2G0r9E6uXLT07XhfgkYJJTLk6Lp8V",
+  "api_key": "b",
+  "api_secret": "b",
   "base_url": "https://api.india.delta.exchange",
   "ws_url": "wss://socket.india.delta.exchange",
   "capital": 3000,
