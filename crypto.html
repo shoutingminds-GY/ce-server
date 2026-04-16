@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CryptoEdge AI</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --bg2: #0f0f1a;
+    --bg3: #141428;
+    --border: #1e1e3a;
+    --accent: #00f5c4;
+    --accent2: #7c3aed;
+    --accent3: #f59e0b;
+    --red: #ff4444;
+    --green: #00f5c4;
+    --yellow: #f59e0b;
+    --blue: #3b82f6;
+    --text: #e2e8f0;
+    --text2: #94a3b8;
+    --text3: #475569;
+    --font-mono: 'Space Mono', monospace;
+    --font-display: 'Syne', sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-display);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* HEADER */
+  .header {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  .logo {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 18px;
+    color: var(--accent);
+    letter-spacing: -0.5px;
+  }
+  .logo span { color: var(--text2); font-weight: 400; font-size: 12px; margin-left: 6px; }
+  .version-badge {
+    background: var(--accent2);
+    color: white;
+    font-size: 9px;
+    font-family: var(--font-mono);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 700;
+  }
+  .header-right { display: flex; align-items: center; gap: 10px; }
+  .status-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--text3);
+    animation: none;
+  }
+  .status-dot.connected { background: var(--green); animation: pulse 2s infinite; }
+  .status-dot.running { background: var(--accent3); animation: pulse 1s infinite; }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 currentColor; }
+    50% { opacity: 0.8; box-shadow: 0 0 0 4px transparent; }
+  }
+  .header-time {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text2);
+  }
+
+  /* MAIN LAYOUT */
+  .main { padding: 12px; display: flex; flex-direction: column; gap: 12px; }
+
+  /* CIRCUIT BREAKER BANNER */
+  .circuit-banner {
+    background: linear-gradient(135deg, #1a0a0a, #2d0a0a);
+    border: 1px solid var(--red);
+    border-radius: 10px;
+    padding: 12px 16px;
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .circuit-banner.active { display: flex; animation: flashRed 1s infinite; }
+  @keyframes flashRed {
+    0%, 100% { border-color: var(--red); }
+    50% { border-color: #ff000044; }
+  }
+  .circuit-text { display: flex; align-items: center; gap: 10px; }
+  .circuit-icon { font-size: 20px; }
+  .circuit-msg { font-size: 13px; color: var(--red); font-weight: 700; }
+  .circuit-sub { font-size: 11px; color: #ff888888; font-family: var(--font-mono); }
+
+  /* PRICE CARDS */
+  .price-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .price-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    position: relative;
+    overflow: hidden;
+  }
+  .price-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+  }
+  .price-card.eth::before { background: linear-gradient(90deg, #627eea, var(--accent2)); }
+  .price-symbol {
+    font-size: 11px;
+    font-family: var(--font-mono);
+    color: var(--text2);
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .price-value {
+    font-family: var(--font-mono);
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -1px;
+  }
+  .price-value.loading { color: var(--text3); font-size: 14px; }
+  .ema-row {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+  }
+  .ema-pill {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    padding: 3px 6px;
+    border-radius: 4px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text2);
+  }
+  .signal-badge {
+    font-size: 10px;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+  }
+  .signal-badge.bullish { background: #00f5c41a; color: var(--green); border: 1px solid #00f5c433; }
+  .signal-badge.bearish { background: #ff44441a; color: var(--red); border: 1px solid #ff444433; }
+  .signal-badge.hold { background: var(--bg3); color: var(--text3); border: 1px solid var(--border); }
+  .signal-badge.buy_call { background: #00f5c422; color: var(--green); border: 1px solid var(--green); animation: glowGreen 1s infinite; }
+  .signal-badge.buy_put { background: #ff444422; color: var(--red); border: 1px solid var(--red); animation: glowRed 1s infinite; }
+  @keyframes glowGreen { 0%,100%{box-shadow:0 0 4px #00f5c444} 50%{box-shadow:0 0 12px #00f5c488} }
+  @keyframes glowRed { 0%,100%{box-shadow:0 0 4px #ff444444} 50%{box-shadow:0 0 12px #ff444488} }
+
+  /* PNL ROW */
+  .pnl-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  .pnl-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 14px;
+    text-align: center;
+  }
+  .pnl-label { font-size: 10px; color: var(--text3); font-family: var(--font-mono); margin-bottom: 4px; text-transform: uppercase; }
+  .pnl-value {
+    font-family: var(--font-mono);
+    font-size: 16px;
+    font-weight: 700;
+  }
+  .pnl-value.positive { color: var(--green); }
+  .pnl-value.negative { color: var(--red); }
+  .pnl-value.neutral { color: var(--text); }
+
+  /* CONTROLS */
+  .controls-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+  }
+  .controls-title {
+    font-size: 11px;
+    color: var(--text3);
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+  }
+  .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+  .btn {
+    border: none;
+    border-radius: 8px;
+    padding: 12px 8px;
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.3px;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-start { background: var(--green); color: #000; }
+  .btn-start:hover { background: #00d4a8; }
+  .btn-stop { background: var(--bg3); color: var(--text2); border: 1px solid var(--border); }
+  .btn-stop:hover { border-color: var(--red); color: var(--red); }
+  .btn-pause { background: var(--accent3); color: #000; }
+  .btn-pause:hover { background: #d97706; }
+  .btn-emergency {
+    grid-column: span 2;
+    background: linear-gradient(135deg, #7f1d1d, #991b1b);
+    color: var(--red);
+    border: 1px solid var(--red);
+    font-size: 12px;
+    padding: 10px;
+  }
+  .btn-emergency:hover { background: linear-gradient(135deg, #991b1b, #b91c1c); }
+  .btn-reset { background: var(--bg3); color: var(--accent2); border: 1px solid var(--accent2); font-size: 12px; }
+  .btn-reset:hover { background: var(--accent2); color: white; }
+
+  /* MANUAL TRADE */
+  .manual-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 10px; }
+  .select-input {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 8px;
+    color: var(--text);
+    font-family: var(--font-display);
+    font-size: 12px;
+    width: 100%;
+    outline: none;
+  }
+  .select-input:focus { border-color: var(--accent); }
+  .btn-manual-call { background: #00f5c422; color: var(--green); border: 1px solid var(--green); font-size: 12px; }
+  .btn-manual-call:hover { background: #00f5c433; }
+  .btn-manual-put { background: #ff444422; color: var(--red); border: 1px solid var(--red); font-size: 12px; }
+  .btn-manual-put:hover { background: #ff444433; }
+
+  /* SETTINGS */
+  .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+  .setting-item { display: flex; flex-direction: column; gap: 4px; }
+  .setting-label { font-size: 10px; color: var(--text3); font-family: var(--font-mono); }
+  .setting-input {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 10px;
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    outline: none;
+    width: 100%;
+  }
+  .setting-input:focus { border-color: var(--accent); }
+  .btn-save-settings {
+    grid-column: span 2;
+    background: var(--accent2);
+    color: white;
+    font-size: 12px;
+    margin-top: 4px;
+  }
+  .btn-save-settings:hover { background: #6d28d9; }
+
+  /* TRADING HOURS */
+  .hours-row { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+  .toggle-switch {
+    position: relative; width: 40px; height: 22px; cursor: pointer;
+  }
+  .toggle-switch input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider {
+    position: absolute; inset: 0; background: var(--bg3);
+    border: 1px solid var(--border); border-radius: 22px; transition: 0.2s;
+  }
+  .toggle-slider:before {
+    content: ''; position: absolute;
+    width: 16px; height: 16px; left: 2px; top: 2px;
+    background: var(--text3); border-radius: 50%; transition: 0.2s;
+  }
+  .toggle-switch input:checked + .toggle-slider { background: var(--accent2); border-color: var(--accent2); }
+  .toggle-switch input:checked + .toggle-slider:before { transform: translateX(18px); background: white; }
+  .hours-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; flex: 1; }
+  .hours-label { font-size: 11px; color: var(--text2); white-space: nowrap; }
+
+  /* POSITIONS */
+  .section-title {
+    font-size: 11px;
+    color: var(--text3);
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .badge {
+    background: var(--accent2);
+    color: white;
+    font-size: 9px;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-weight: 700;
+  }
+  .positions-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+  }
+  .empty-state {
+    text-align: center;
+    color: var(--text3);
+    font-size: 12px;
+    font-family: var(--font-mono);
+    padding: 20px;
+  }
+  .position-item {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 8px;
+  }
+  .position-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .position-symbol {
+    display: flex; align-items: center; gap: 8px;
+  }
+  .pos-badge {
+    font-size: 10px;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+  .pos-badge.call { background: #00f5c422; color: var(--green); border: 1px solid #00f5c444; }
+  .pos-badge.put { background: #ff444422; color: var(--red); border: 1px solid #ff444444; }
+  .pos-name { font-size: 13px; font-weight: 700; }
+  .pos-contract { font-size: 10px; color: var(--text3); font-family: var(--font-mono); }
+  .pos-pnl {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    font-weight: 700;
+  }
+  .pos-pnl.positive { color: var(--green); }
+  .pos-pnl.negative { color: var(--red); }
+  .position-details {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+  .pos-detail { font-size: 10px; font-family: var(--font-mono); }
+  .pos-detail-label { color: var(--text3); }
+  .pos-detail-value { color: var(--text); }
+  .btn-close-pos {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--red);
+    color: var(--red);
+    font-size: 11px;
+    padding: 7px;
+    border-radius: 6px;
+  }
+  .btn-close-pos:hover { background: #ff444422; }
+
+  /* PROGRESS BAR */
+  .progress-bar-wrap {
+    background: var(--bg3);
+    border-radius: 4px;
+    height: 4px;
+    margin-top: 6px;
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.3s;
+  }
+  .progress-bar-fill.positive { background: var(--green); }
+  .progress-bar-fill.negative { background: var(--red); }
+
+  /* TRADE HISTORY */
+  .history-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+  }
+  .history-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
+    font-family: var(--font-mono);
+  }
+  .history-item:last-child { border-bottom: none; }
+  .history-left { display: flex; align-items: center; gap: 8px; }
+  .history-symbol { color: var(--text); font-weight: 700; }
+  .history-time { color: var(--text3); font-size: 10px; }
+  .history-pnl.positive { color: var(--green); }
+  .history-pnl.negative { color: var(--red); }
+
+  /* LOGS */
+  .logs-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+  }
+  .logs-container {
+    max-height: 300px;
+    overflow-y: auto;
+    font-family: var(--font-mono);
+    font-size: 10px;
+  }
+  .logs-container::-webkit-scrollbar { width: 4px; }
+  .logs-container::-webkit-scrollbar-track { background: var(--bg3); }
+  .logs-container::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  .log-entry {
+    padding: 5px 8px;
+    border-radius: 4px;
+    margin-bottom: 3px;
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+  }
+  .log-entry:hover { background: var(--bg3); }
+  .log-time { color: var(--text3); white-space: nowrap; min-width: 65px; font-size: 9px; }
+  .log-level {
+    font-weight: 700;
+    min-width: 50px;
+    font-size: 9px;
+  }
+  .log-level.INFO { color: var(--blue); }
+  .log-level.SIGNAL { color: var(--accent); }
+  .log-level.TRADE { color: var(--green); }
+  .log-level.WARN { color: var(--yellow); }
+  .log-level.ERROR { color: var(--red); }
+  .log-level.CIRCUIT { color: var(--red); font-size: 10px; }
+  .log-msg { color: var(--text2); line-height: 1.4; }
+
+  /* CONNECTION STATUS */
+  .conn-bar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 12px;
+    background: var(--bg3);
+    border-radius: 8px;
+    font-size: 11px;
+    font-family: var(--font-mono);
+    color: var(--text3);
+    margin-bottom: 10px;
+  }
+  .conn-bar.connected { color: var(--green); background: #00f5c40a; }
+  .conn-bar.disconnected { color: var(--red); background: #ff44440a; }
+
+  /* DIVIDER */
+  .divider {
+    height: 1px; background: var(--border); margin: 4px 0;
+  }
+
+  /* INSTRUMENT TOGGLES */
+  .instrument-row { display: flex; gap: 8px; margin-top: 8px; }
+  .inst-btn {
+    flex: 1; padding: 8px; border-radius: 8px; font-size: 12px; font-weight: 700;
+    border: 1px solid var(--border); background: var(--bg3); color: var(--text3);
+    cursor: pointer; transition: all 0.15s; font-family: var(--font-display);
+  }
+  .inst-btn.active { border-color: var(--accent); color: var(--accent); background: #00f5c41a; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <div class="logo">CryptoEdge AI <span>by Uttam</span></div>
+    <div class="version-badge">v1.0</div>
+  </div>
+  <div class="header-right">
+    <div class="status-dot" id="wsDot"></div>
+    <div class="header-time" id="headerTime">--:--:-- IST</div>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- CIRCUIT BREAKER BANNER -->
+  <div class="circuit-banner" id="circuitBanner">
+    <div class="circuit-text">
+      <div class="circuit-icon">⚡</div>
+      <div>
+        <div class="circuit-msg">CIRCUIT BREAKER ACTIVE — TRADING HALTED</div>
+        <div class="circuit-sub" id="circuitReason">Daily loss limit reached</div>
+      </div>
+    </div>
+    <button class="btn btn-reset" onclick="resetCircuit()">RESET</button>
+  </div>
+
+  <!-- CONNECTION BAR -->
+  <div class="conn-bar disconnected" id="connBar">
+    ○ Connecting to server at 198.211.98.172:3001...
+  </div>
+
+  <!-- PRICE CARDS -->
+  <div class="price-grid">
+    <div class="price-card" id="btcCard">
+      <div class="price-symbol">
+        <span>₿ BTC/INR</span>
+        <span class="signal-badge hold" id="btcSignal">HOLD</span>
+      </div>
+      <div class="price-value loading" id="btcPrice">Connecting...</div>
+      <div class="ema-row">
+        <div class="ema-pill">EMA9: <span id="btcEma9">—</span></div>
+        <div class="ema-pill">EMA21: <span id="btcEma21">—</span></div>
+      </div>
+    </div>
+    <div class="price-card eth" id="ethCard">
+      <div class="price-symbol">
+        <span>Ξ ETH/INR</span>
+        <span class="signal-badge hold" id="ethSignal">HOLD</span>
+      </div>
+      <div class="price-value loading" id="ethPrice">Connecting...</div>
+      <div class="ema-row">
+        <div class="ema-pill">EMA9: <span id="ethEma9">—</span></div>
+        <div class="ema-pill">EMA21: <span id="ethEma21">—</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PNL ROW -->
+  <div class="pnl-row">
+    <div class="pnl-card">
+      <div class="pnl-label">Capital</div>
+      <div class="pnl-value neutral" id="capitalValue">₹3,000</div>
+    </div>
+    <div class="pnl-card">
+      <div class="pnl-label">Day P&L</div>
+      <div class="pnl-value neutral" id="dayPnl">₹0.00</div>
+    </div>
+    <div class="pnl-card">
+      <div class="pnl-label">Total P&L</div>
+      <div class="pnl-value neutral" id="totalPnl">₹0.00</div>
+    </div>
+  </div>
+
+  <!-- CONTROLS -->
+  <div class="controls-card">
+    <div class="controls-title">⚙ Engine Controls</div>
+    <div class="btn-grid">
+      <button class="btn btn-start" onclick="startEngine()">▶ START</button>
+      <button class="btn btn-stop" onclick="stopEngine()">■ STOP</button>
+      <button class="btn btn-pause" id="pauseBtn" onclick="pauseEngine()">⏸ PAUSE</button>
+      <button class="btn btn-reset" onclick="resetCircuit()">↺ RESET CB</button>
+      <button class="btn btn-emergency" onclick="emergencyClose()">🚨 EMERGENCY CLOSE ALL POSITIONS</button>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- MANUAL TRADE -->
+    <div class="controls-title" style="margin-top:10px">✋ Manual Trade</div>
+    <div class="manual-grid">
+      <select class="select-input" id="manualSymbol">
+        <option value="BTC">BTC</option>
+        <option value="ETH">ETH</option>
+      </select>
+      <button class="btn btn-manual-call" onclick="manualTrade('CALL')">▲ CALL</button>
+      <button class="btn btn-manual-put" onclick="manualTrade('PUT')">▼ PUT</button>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- SETTINGS -->
+    <div class="controls-title" style="margin-top:10px">🔧 Settings</div>
+    <div class="settings-grid">
+      <div class="setting-item">
+        <div class="setting-label">Daily Loss Limit %</div>
+        <input class="setting-input" type="number" id="settingDailyLoss" value="15" min="5" max="50">
+      </div>
+      <div class="setting-item">
+        <div class="setting-label">Max Trade Risk %</div>
+        <input class="setting-input" type="number" id="settingTradeRisk" value="20" min="5" max="50">
+      </div>
+      <div class="setting-item">
+        <div class="setting-label">EMA Fast Period</div>
+        <input class="setting-input" type="number" id="settingEmaFast" value="9" min="3" max="50">
+      </div>
+      <div class="setting-item">
+        <div class="setting-label">EMA Slow Period</div>
+        <input class="setting-input" type="number" id="settingEmaSlow" value="21" min="10" max="100">
+      </div>
+      <div class="setting-item">
+        <div class="setting-label">Primary Expiry</div>
+        <select class="setting-input" id="settingExpiry">
+          <option value="weekly">Weekly</option>
+          <option value="daily">Daily</option>
+          <option value="monthly">Monthly</option>
+        </select>
+      </div>
+      <div class="setting-item">
+        <div class="setting-label">Max Open Positions</div>
+        <input class="setting-input" type="number" id="settingMaxPos" value="2" min="1" max="5">
+      </div>
+      <button class="btn btn-save-settings" onclick="saveSettings()">💾 Save Settings</button>
+    </div>
+
+    <!-- TRADING HOURS -->
+    <div class="controls-title" style="margin-top:12px">🕐 Active Trading Hours</div>
+    <div class="hours-row">
+      <label class="toggle-switch">
+        <input type="checkbox" id="hoursEnabled" onchange="saveSettings()">
+        <span class="toggle-slider"></span>
+      </label>
+      <span class="hours-label">Restrict Hours</span>
+      <div class="hours-inputs">
+        <input class="setting-input" type="time" id="hoursStart" value="07:00">
+        <input class="setting-input" type="time" id="hoursEnd" value="23:00">
+      </div>
+    </div>
+
+    <!-- INSTRUMENTS -->
+    <div class="controls-title" style="margin-top:12px">📊 Active Instruments</div>
+    <div class="instrument-row">
+      <button class="inst-btn active" id="instBTC" onclick="toggleInstrument('BTC')">₿ BTC</button>
+      <button class="inst-btn active" id="instETH" onclick="toggleInstrument('ETH')">Ξ ETH</button>
+    </div>
+  </div>
+
+  <!-- OPEN POSITIONS -->
+  <div class="positions-card">
+    <div class="section-title">
+      Open Positions
+      <span class="badge" id="positionCount">0</span>
+    </div>
+    <div id="positionsList">
+      <div class="empty-state">No open positions</div>
+    </div>
+  </div>
+
+  <!-- TRADE HISTORY -->
+  <div class="history-card">
+    <div class="section-title">Recent Trades <span class="badge" id="historyCount">0</span></div>
+    <div id="historyList">
+      <div class="empty-state">No trades yet</div>
+    </div>
+  </div>
+
+  <!-- LOGS -->
+  <div class="logs-card">
+    <div class="section-title">
+      System Logs
+      <button class="btn btn-stop" style="font-size:9px;padding:4px 8px;border-radius:4px" onclick="clearLogs()">CLEAR</button>
+    </div>
+    <div class="logs-container" id="logsContainer">
+      <div class="log-entry">
+        <span class="log-time">--:--:--</span>
+        <span class="log-level INFO">INFO</span>
+        <span class="log-msg">CryptoEdge AI Dashboard loaded. Connecting to server...</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+var SERVER = 'http://198.211.98.172:3001';
+var WS_SERVER = 'ws://198.211.98.172:3001';
+var ws = null;
+var reconnectTimer = null;
+var activeInstruments = ['BTC', 'ETH'];
+
+// ── CLOCK ──────────────────────────────────────────────────────────────────
+function updateClock() {
+  var now = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  document.getElementById('headerTime').textContent = now + ' IST';
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ── WEBSOCKET ──────────────────────────────────────────────────────────────
+function connect() {
+  if (ws) { try { ws.close(); } catch(e) {} }
+  ws = new WebSocket(WS_SERVER);
+
+  ws.onopen = function() {
+    clearTimeout(reconnectTimer);
+    setConnBar(true);
+    addLog('INFO', 'Connected to CryptoEdge server');
+  };
+
+  ws.onmessage = function(e) {
+    try {
+      var msg = JSON.parse(e.data);
+      if (msg.type === 'fullState' || msg.type === 'status') {
+        updateUI(msg.data);
+      } else if (msg.type === 'log') {
+        renderLog(msg.entry);
+      }
+    } catch(err) {}
+  };
+
+  ws.onclose = function() {
+    setConnBar(false);
+    reconnectTimer = setTimeout(connect, 4000);
+  };
+
+  ws.onerror = function() {
+    setConnBar(false);
+  };
+}
+
+function setConnBar(connected) {
+  var bar = document.getElementById('connBar');
+  var dot = document.getElementById('wsDot');
+  if (connected) {
+    bar.className = 'conn-bar connected';
+    bar.textContent = '● Connected to CryptoEdge Server — 198.211.98.172:3001';
+    dot.className = 'status-dot connected';
+  } else {
+    bar.className = 'conn-bar disconnected';
+    bar.textContent = '○ Disconnected — Reconnecting...';
+    dot.className = 'status-dot';
+  }
+}
+
+// ── UI UPDATE ──────────────────────────────────────────────────────────────
+function fmt(n) { return parseFloat(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 }); }
+function fmtPrice(n) { return '₹' + parseFloat(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 }); }
+function fmtPnl(n) { var v = parseFloat(n || 0); return (v >= 0 ? '+' : '') + '₹' + Math.abs(v).toFixed(2); }
+
+function updateUI(s) {
+  if (!s) return;
+
+  // Running state dot
+  var dot = document.getElementById('wsDot');
+  if (s.running) dot.className = 'status-dot running';
+  else if (s.wsConnected) dot.className = 'status-dot connected';
+
+  // Pause button
+  var pauseBtn = document.getElementById('pauseBtn');
+  pauseBtn.textContent = s.paused ? '▶ RESUME' : '⏸ PAUSE';
+  pauseBtn.style.background = s.paused ? 'var(--green)' : 'var(--accent3)';
+
+  // Circuit breaker
+  var banner = document.getElementById('circuitBanner');
+  if (s.circuitBroken) {
+    banner.className = 'circuit-banner active';
+    document.getElementById('circuitReason').textContent = s.circuitReason || 'Daily loss limit reached';
+  } else {
+    banner.className = 'circuit-banner';
+  }
+
+  // Prices
+  if (s.prices) {
+    updatePrice('BTC', s.prices.BTC, s.ema && s.ema.BTC);
+    updatePrice('ETH', s.prices.ETH, s.ema && s.ema.ETH);
+  }
+
+  // PnL
+  var dayPnl = parseFloat(s.dailyPnL || 0);
+  var totalPnl = parseFloat(s.totalPnL || 0);
+  var dayEl = document.getElementById('dayPnl');
+  var totEl = document.getElementById('totalPnl');
+  dayEl.textContent = fmtPnl(dayPnl);
+  dayEl.className = 'pnl-value ' + (dayPnl > 0 ? 'positive' : dayPnl < 0 ? 'negative' : 'neutral');
+  totEl.textContent = fmtPnl(totalPnl);
+  totEl.className = 'pnl-value ' + (totalPnl > 0 ? 'positive' : totalPnl < 0 ? 'negative' : 'neutral');
+  document.getElementById('capitalValue').textContent = '₹' + fmt(s.capital);
+
+  // Positions
+  renderPositions(s.positions || []);
+
+  // History
+  renderHistory(s.closedTrades || []);
+
+  // Settings sync
+  if (s.dailyLossLimit) document.getElementById('settingDailyLoss').value = s.dailyLossLimit;
+  if (s.maxTradeRiskPct) document.getElementById('settingTradeRisk').value = s.maxTradeRiskPct;
+  if (s.emaFast) document.getElementById('settingEmaFast').value = s.emaFast;
+  if (s.emaSlow) document.getElementById('settingEmaSlow').value = s.emaSlow;
+  if (s.primaryExpiry) document.getElementById('settingExpiry').value = s.primaryExpiry;
+  if (s.maxOpenPositions) document.getElementById('settingMaxPos').value = s.maxOpenPositions;
+  if (s.tradeActiveHours) {
+    document.getElementById('hoursEnabled').checked = s.tradeActiveHours.enabled;
+    document.getElementById('hoursStart').value = s.tradeActiveHours.start || '07:00';
+    document.getElementById('hoursEnd').value = s.tradeActiveHours.end || '23:00';
+  }
+  if (s.instruments) {
+    activeInstruments = s.instruments;
+    document.getElementById('instBTC').className = 'inst-btn ' + (activeInstruments.indexOf('BTC') >= 0 ? 'active' : '');
+    document.getElementById('instETH').className = 'inst-btn ' + (activeInstruments.indexOf('ETH') >= 0 ? 'active' : '');
+  }
+}
+
+function updatePrice(symbol, price, ema) {
+  var priceEl = document.getElementById(symbol.toLowerCase() + 'Price');
+  var signalEl = document.getElementById(symbol.toLowerCase() + 'Signal');
+  var ema9El = document.getElementById(symbol.toLowerCase() + 'Ema9');
+  var ema21El = document.getElementById(symbol.toLowerCase() + 'Ema21');
+
+  if (price) {
+    priceEl.textContent = fmtPrice(price);
+    priceEl.className = 'price-value';
+  }
+
+  if (ema) {
+    if (ema.fast) ema9El.textContent = fmt(ema.fast);
+    if (ema.slow) ema21El.textContent = fmt(ema.slow);
+    var sig = (ema.signal || 'HOLD').toLowerCase().replace('_', '_');
+    var sigClass = 'signal-badge ';
+    if (sig === 'buy_call') sigClass += 'buy_call';
+    else if (sig === 'buy_put') sigClass += 'buy_put';
+    else if (sig === 'bullish') sigClass += 'bullish';
+    else if (sig === 'bearish') sigClass += 'bearish';
+    else sigClass += 'hold';
+    signalEl.className = sigClass;
+    signalEl.textContent = (ema.signal || 'HOLD').replace('_', ' ');
+  }
+}
+
+function renderPositions(positions) {
+  document.getElementById('positionCount').textContent = positions.length;
+  var el = document.getElementById('positionsList');
+  if (!positions.length) {
+    el.innerHTML = '<div class="empty-state">No open positions — engine monitoring market</div>';
+    return;
+  }
+  el.innerHTML = positions.map(function(p) {
+    var pnlClass = p.pnl >= 0 ? 'positive' : 'negative';
+    var pnlPct = parseFloat(p.pnlPct || 0).toFixed(1);
+    var barWidth = Math.min(100, Math.abs(parseFloat(p.pnlPct || 0)));
+    return '<div class="position-item">' +
+      '<div class="position-header">' +
+        '<div class="position-symbol">' +
+          '<span class="pos-badge ' + p.optionType.toLowerCase() + '">' + p.optionType + '</span>' +
+          '<div>' +
+            '<div class="pos-name">' + p.symbol + '</div>' +
+            '<div class="pos-contract">Strike: ' + p.strikePrice + '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div>' +
+          '<div class="pos-pnl ' + pnlClass + '">' + fmtPnl(p.pnl) + '</div>' +
+          '<div style="font-size:10px;color:var(--text3);text-align:right;font-family:var(--font-mono)">' + pnlPct + '%</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="position-details">' +
+        '<div class="pos-detail"><div class="pos-detail-label">Entry</div><div class="pos-detail-value">₹' + fmt(p.entryPrice) + '</div></div>' +
+        '<div class="pos-detail"><div class="pos-detail-label">Current</div><div class="pos-detail-value">₹' + fmt(p.currentPrice) + '</div></div>' +
+        '<div class="pos-detail"><div class="pos-detail-label">Qty</div><div class="pos-detail-value">' + p.quantity + '</div></div>' +
+        '<div class="pos-detail"><div class="pos-detail-label">SL</div><div class="pos-detail-value" style="color:var(--red)">₹' + fmt(p.stopLoss) + '</div></div>' +
+        '<div class="pos-detail"><div class="pos-detail-label">TP</div><div class="pos-detail-value" style="color:var(--green)">₹' + fmt(p.takeProfit) + '</div></div>' +
+        '<div class="pos-detail"><div class="pos-detail-label">Expiry</div><div class="pos-detail-value">' + new Date(p.expiry).toLocaleDateString('en-IN') + '</div></div>' +
+      '</div>' +
+      '<div class="progress-bar-wrap"><div class="progress-bar-fill ' + pnlClass + '" style="width:' + barWidth + '%"></div></div>' +
+      '<button class="btn btn-close-pos" style="margin-top:8px" onclick="closePosition(\'' + p.id + '\')">✕ Close Position</button>' +
+    '</div>';
+  }).join('');
+}
+
+function renderHistory(trades) {
+  document.getElementById('historyCount').textContent = trades.length;
+  var el = document.getElementById('historyList');
+  if (!trades.length) {
+    el.innerHTML = '<div class="empty-state">No closed trades yet</div>';
+    return;
+  }
+  el.innerHTML = trades.slice(0, 10).map(function(t) {
+    var pnlClass = (t.closePnL || 0) >= 0 ? 'positive' : 'negative';
+    var timeStr = t.closeTime ? new Date(t.closeTime).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' }) : '--';
+    return '<div class="history-item">' +
+      '<div class="history-left">' +
+        '<span class="pos-badge ' + (t.optionType || '').toLowerCase() + '">' + (t.optionType || '-') + '</span>' +
+        '<div>' +
+          '<div class="history-symbol">' + t.symbol + '</div>' +
+          '<div class="history-time">' + timeStr + ' IST</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="history-pnl ' + pnlClass + '">' + fmtPnl(t.closePnL || 0) + '</div>' +
+    '</div>';
+  }).join('');
+}
+
+// ── LOGS ───────────────────────────────────────────────────────────────────
+function renderLog(entry) {
+  var container = document.getElementById('logsContainer');
+  var div = document.createElement('div');
+  div.className = 'log-entry';
+  var timeStr = entry.timeIST ? entry.timeIST.split(', ')[1] || entry.timeIST : '--';
+  div.innerHTML = '<span class="log-time">' + timeStr + '</span>' +
+    '<span class="log-level ' + entry.level + '">[' + entry.level + ']</span>' +
+    '<span class="log-msg">' + entry.msg + '</span>';
+  container.insertBefore(div, container.firstChild);
+  if (container.children.length > 200) container.removeChild(container.lastChild);
+}
+
+function addLog(level, msg) {
+  renderLog({ level: level, msg: msg, timeIST: new Date().toLocaleTimeString('en-IN') });
+}
+
+function clearLogs() {
+  document.getElementById('logsContainer').innerHTML = '';
+  addLog('INFO', 'Logs cleared');
+}
+
+// ── API CALLS ──────────────────────────────────────────────────────────────
+function apiPost(path, body) {
+  return fetch(SERVER + path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body || {})
+  }).then(function(r) { return r.json(); }).catch(function(e) { addLog('ERROR', path + ' failed: ' + e.message); return null; });
+}
+
+function startEngine() {
+  addLog('INFO', 'Starting trading engine...');
+  apiPost('/control/start').then(function(r) {
+    if (r && r.success) addLog('INFO', 'Engine started successfully');
+    else addLog('ERROR', 'Start failed: ' + (r && r.error));
+  });
+}
+
+function stopEngine() {
+  if (!confirm('Stop trading engine?')) return;
+  apiPost('/control/stop').then(function(r) {
+    if (r && r.success) addLog('INFO', 'Engine stopped');
+  });
+}
+
+function pauseEngine() {
+  apiPost('/control/pause').then(function(r) {
+    if (r) addLog('INFO', r.paused ? 'Engine paused' : 'Engine resumed');
+  });
+}
+
+function resetCircuit() {
+  apiPost('/control/reset-circuit').then(function(r) {
+    if (r && r.success) addLog('INFO', 'Circuit breaker reset');
+  });
+}
+
+function emergencyClose() {
+  if (!confirm('EMERGENCY CLOSE ALL POSITIONS?\n\nThis will close all open positions immediately at market price.')) return;
+  addLog('WARN', 'Emergency close all initiated...');
+  apiPost('/control/close-all').then(function(r) {
+    if (r && r.success) addLog('TRADE', 'All positions closed');
+    else addLog('ERROR', 'Emergency close failed');
+  });
+}
+
+function closePosition(id) {
+  if (!confirm('Close this position at market price?')) return;
+  apiPost('/position/close', { id: id }).then(function(r) {
+    if (r && r.success) addLog('TRADE', 'Position closed. PnL: ' + fmtPnl(r.pnl || 0));
+    else addLog('ERROR', 'Close failed: ' + (r && r.error));
+  });
+}
+
+function manualTrade(optionType) {
+  var symbol = document.getElementById('manualSymbol').value;
+  if (!confirm('Place manual ' + optionType + ' for ' + symbol + '?')) return;
+  addLog('TRADE', 'Manual ' + optionType + ' trade for ' + symbol + '...');
+  apiPost('/trade/manual', { symbol: symbol, optionType: optionType }).then(function(r) {
+    if (r && r.success) addLog('TRADE', 'Manual trade executed');
+    else addLog('ERROR', 'Manual trade failed: ' + (r && r.error));
+  });
+}
+
+function saveSettings() {
+  var body = {
+    dailyLossLimit: document.getElementById('settingDailyLoss').value,
+    maxTradeRiskPct: document.getElementById('settingTradeRisk').value,
+    emaFast: document.getElementById('settingEmaFast').value,
+    emaSlow: document.getElementById('settingEmaSlow').value,
+    primaryExpiry: document.getElementById('settingExpiry').value,
+    maxOpenPositions: document.getElementById('settingMaxPos').value,
+    instruments: activeInstruments,
+    tradeActiveHours: {
+      enabled: document.getElementById('hoursEnabled').checked,
+      start: document.getElementById('hoursStart').value,
+      end: document.getElementById('hoursEnd').value,
+      timezone: 'Asia/Kolkata'
+    }
+  };
+  apiPost('/settings/update', body).then(function(r) {
+    if (r && r.success) addLog('INFO', 'Settings saved');
+    else addLog('ERROR', 'Settings save failed');
+  });
+}
+
+function toggleInstrument(sym) {
+  var idx = activeInstruments.indexOf(sym);
+  if (idx >= 0) {
+    if (activeInstruments.length <= 1) { addLog('WARN', 'At least one instrument must be active'); return; }
+    activeInstruments.splice(idx, 1);
+  } else {
+    activeInstruments.push(sym);
+  }
+  document.getElementById('inst' + sym).className = 'inst-btn ' + (activeInstruments.indexOf(sym) >= 0 ? 'active' : '');
+  saveSettings();
+}
+
+// ── INIT ───────────────────────────────────────────────────────────────────
+connect();
+
+// Fetch initial state via REST as fallback
+fetch(SERVER + '/status').then(function(r) { return r.json(); }).then(function(d) { updateUI(d); }).catch(function() {});
+</script>
+</body>
+</html>
