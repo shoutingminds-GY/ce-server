@@ -1,0 +1,21 @@
+{
+  "api_key": "YOUR_API_KEY_HERE",
+  "api_secret": "YOUR_API_SECRET_HERE",
+  "base_url": "https://api.india.delta.exchange",
+  "ws_url": "wss://socket.india.delta.exchange",
+  "capital": 3000,
+  "daily_loss_limit_pct": 15,
+  "max_trade_risk_pct": 20,
+  "ema_fast": 9,
+  "ema_slow": 21,
+  "candle_interval_minutes": 15,
+  "instruments": ["BTC", "ETH"],
+  "primary_expiry": "weekly",
+  "max_open_positions": 2,
+  "trade_active_hours": {
+    "enabled": false,
+    "start": "07:00",
+    "end": "23:00",
+    "timezone": "Asia/Kolkata"
+  }
+}
